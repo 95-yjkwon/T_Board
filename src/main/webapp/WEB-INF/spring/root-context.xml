@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+    <bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig"> <!-- 1. 이것과 -->
+       <!--  <property name="driverClassName"
+            value="oracle.jdbc.driver.OracleDriver"></property>
+        <property name="jdbcUrl"
+            value="jdbc:oracle:thin:@localhost:1521:XE"></property> -->
+            
+               <property name="driverClassName"
+            value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"></property>
+        <property name="jdbcUrl"
+            value="jdbc:log4jdbc:oracle:thin:@localhost:1521:XE"></property> 
+            
+            
+        <property name="username" value="scott"></property>
+        <property name="password" value="tiger"></property>
+    </bean>
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource"
+        destroy-method="close">
+        <constructor-arg ref="hikariConfig"></constructor-arg> <!-- 1.bean의 id가 생성자의 매개변수로 온다. -->
+    </bean>
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="dataSource"></property>
+    </bean>
+    
+    <bean id="transactionManager"
+    	class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    	<property name="dataSource" ref="dataSource"></property>
+    </bean>
+    <!-- 트랜잭션을 어노테이션 기반으로 사용하도록 설정 -->
+    <tx:annotation-driven/>
+    
+    <mybatis-spring:scan base-package="com.keduit.mapper"/>
+
+    <context:component-scan base-package="com.keduit.service"></context:component-scan>
+    <context:component-scan base-package="com.keduit.sample"></context:component-scan>
+</beans>

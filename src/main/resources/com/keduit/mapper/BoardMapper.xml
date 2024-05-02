@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.keduit.mapper.BoardMapper">
+	<sql id="criteria">
+		<trim prefix="(" suffix=") and " prefixOverrides="or">
+			<!--typeArr:마이바티스는 getter를 호출(getTypeArr)) -->
+			<foreach item="type" collection="typeArr">
+				<trim prefix="or">
+					<choose>
+						<when test="type=='T'.toString()">
+							title like '%'||#{keyword}||'%'
+						</when>
+						<when test="type=='C'.toString()">
+							content like '%'||#{keyword}||'%'
+						</when>
+						<when test="type=='W'.toString()">
+							writer like '%'||#{keyword}||'%'
+						</when>
+
+
+					</choose>
+				</trim>
+			</foreach>
+
+		</trim>
+
+	</sql>
+
+
+	<select id="getList" resultType="com.keduit.domain.BoardVO">
+
+		select * from t_board order by
+		bno desc
+	</select>
+
+	<select id="getListWithPaging"
+		resultType="com.keduit.domain.BoardVO">
+
+
+		select bno, title, content, writer, regdate, updatedate, replycnt
+		from (
+		select
+		/*+ index_desc(t_board SYS_C007025)*/
+		rownum rn, bno, title, content,
+		writer, regdate, updatedate, replycnt
+		from t_board
+		where
+		<include refid="criteria"></include>
+	
+           <![CDATA[      
+                rownum <= #{pageNum}*#{amount}
+          )
+          where rn > (#{pageNum}-1)*#{amount}
+
+        ]]>
+
+	</select>
+	<select id="getTotalCount" resultType="int">
+		select count(*) from t_board
+		where
+		<include refid="criteria"></include>
+
+		bno>0
+
+	</select>
+	<insert id="insert">
+		insert into t_board (bno, title, content, writer)
+		values (seq_board.nextval, #{title}, #{content}, #{writer})
+	</insert>
+
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="bno" order="BEFORE"
+			resultType="long">
+			select seq_board.nextval from dual
+		</selectKey>
+		insert into t_board (bno, title, content, writer)
+		values(#{bno},
+		#{title}, #{content}, #{writer})
+	</insert>
+
+
+
+	<select id="read" resultType="com.keduit.domain.BoardVO">
+		select *from t_board where
+		bno=#{bno}
+	</select>
+
+	<delete id="delete">
+		delete from t_board where bno=#{bno}
+	</delete>
+
+	<update id="update">
+		update t_board set title=#{title},
+		content=#{content},
+		writer=#{writer},
+		updatedate=sysdate
+		where bno=#{bno}
+	</update>
+	
+
+	<!-- 댓글의 수를 t_board테이블의 replyCnt칼럼에 update한다. -->
+    <update id="updateReplyCnt">
+        update t_board set replyCnt = replyCnt + #{amount} where bno = #{bno}
+    </update>
+
+
+</mapper>
